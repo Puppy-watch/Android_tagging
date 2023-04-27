@@ -52,6 +52,9 @@
  **************************************************************************************************/
 package com.example.ti.ble.sensortag;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,13 +71,25 @@ import android.widget.CompoundButton;
 import com.example.ti.ble.common.BluetoothLeService;
 import com.example.ti.ble.common.GattInfo;
 import com.example.ti.ble.common.GenericBluetoothProfile;
+import com.example.ti.ble.common.TaggingView;
 import com.example.ti.util.Point3D;
 
 public class SensorTagMovementProfile extends GenericBluetoothProfile {
+
+	static ArrayList<String> arr = new ArrayList<>();
+	static ArrayList<String> TList = new ArrayList<>();
+	static ArrayList<Double[]> AccList = new ArrayList<>();
+	static ArrayList<Double[]> GyroList = new ArrayList<>();
+	static ArrayList<Double[]> MagList = new ArrayList<>();
+	static ArrayList<String> LabelTimeList = ((TaggingView)TaggingView.context_help).LabelTimeList;
+	static ArrayList<String> LabelList = ((TaggingView)TaggingView.context_help).LabelList;
+	public static SensorTagMovementProfile context_sensortag_mov;
 	
 	public SensorTagMovementProfile(Context con,BluetoothDevice device,BluetoothGattService service,BluetoothLeService controller) {
 		super(con,device,service,controller);
 		this.tRow =  new SensorTagMovementTableRow(con);
+
+		context_sensortag_mov = this;
 		
 		List<BluetoothGattCharacteristic> characteristics = this.mBTService.getCharacteristics();
 		
@@ -132,15 +147,15 @@ public class SensorTagMovementProfile extends GenericBluetoothProfile {
         int error = mBTLeService.writeCharacteristic(this.configC, b);
         if (error != 0) {
             if (this.configC != null)
-            Log.d("SensorTagMovementProfile","Sensor config failed: " + this.configC.getUuid().toString() + " Error: " + error);
+            	Log.d("SensorTagMovementProfile","Sensor config failed: " + this.configC.getUuid().toString() + " Error: " + error);
         }
         error = this.mBTLeService.setCharacteristicNotification(this.dataC, true);
         if (error != 0) {
             if (this.dataC != null)
-            Log.d("SensorTagMovementProfile","Sensor notification enable failed: " + this.configC.getUuid().toString() + " Error: " + error);
+            	Log.d("SensorTagMovementProfile","Sensor notification enable failed: " + this.configC.getUuid().toString() + " Error: " + error);
         }
 
-		this.periodWasUpdated(1000);
+		this.periodWasUpdated(10);
         this.isEnabled = true;
 	}
 	@Override 
@@ -148,12 +163,12 @@ public class SensorTagMovementProfile extends GenericBluetoothProfile {
         int error = mBTLeService.writeCharacteristic(this.configC, new byte[] {0x00,0x00});
         if (error != 0) {
             if (this.configC != null)
-            Log.d("SensorTagMovementProfile","Sensor config failed: " + this.configC.getUuid().toString() + " Error: " + error);
+            	Log.d("SensorTagMovementProfile","Sensor config failed: " + this.configC.getUuid().toString() + " Error: " + error);
         }
         error = this.mBTLeService.setCharacteristicNotification(this.dataC, false);
         if (error != 0) {
             if (this.dataC != null)
-            Log.d("SensorTagMovementProfile","Sensor notification disable failed: " + this.configC.getUuid().toString() + " Error: " + error);
+            	Log.d("SensorTagMovementProfile","Sensor notification disable failed: " + this.configC.getUuid().toString() + " Error: " + error);
         }
         this.isEnabled = false;
 	}
@@ -173,17 +188,40 @@ public class SensorTagMovementProfile extends GenericBluetoothProfile {
 				this.tRow.sl1.addValue((float)v.x);
 				this.tRow.sl2.addValue((float)v.y);
 				this.tRow.sl3.addValue((float)v.z);
+
+				String nowTime = getCurrentTime("YYYY-MM-dd, HH:mm:ss");
+				String nowTimeList = getCurrentTime("HHmmss");
+				if(LabelTimeList.size() == 0) {
+
+				}
+				else {
+					for(int i = 0; i < LabelTimeList.size(); i++) {
+						if(i == LabelTimeList.size() - 1) {
+							TList.add(nowTime + LabelList.get(i));
+						}
+						else {
+							while(Integer.parseInt(LabelTimeList.get(i)) <= (Integer.parseInt(nowTimeList)) & ((Integer.parseInt(nowTimeList) < Integer.parseInt(LabelTimeList.get(i+1))))) {
+								TList.add(nowTime + LabelList.get(i));
+							}
+						}
+					}
+				}
+				AccList.add(new Double[]{v.x, v.y, v.z});
+
 				v = Sensor.MOVEMENT_GYRO.convert(value);
 				SensorTagMovementTableRow row = (SensorTagMovementTableRow)this.tRow;
 				row.gyroValue.setText(Html.fromHtml(String.format("<font color=#FF0000>X:%.2f°/s</font>, <font color=#00967D>Y:%.2f°/s</font>, <font color=#00000>Z:%.2f°/s</font>", v.x, v.y, v.z)));
 				row.sl4.addValue((float)v.x);
 				row.sl5.addValue((float)v.y);
 				row.sl6.addValue((float)v.z);
+				GyroList.add(new Double[]{v.x, v.y, v.z});
+
 				v = Sensor.MOVEMENT_MAG.convert(value);
 				row.magValue.setText(Html.fromHtml(String.format("<font color=#FF0000>X:%.2fuT</font>, <font color=#00967D>Y:%.2fuT</font>, <font color=#00000>Z:%.2fuT</font>", v.x, v.y, v.z)));
 				row.sl7.addValue((float)v.x);
 				row.sl8.addValue((float)v.y);
 				row.sl9.addValue((float)v.z);
+				MagList.add(new Double[]{v.x, v.y, v.z});
 			}
 	}
     @Override
@@ -203,4 +241,18 @@ public class SensorTagMovementProfile extends GenericBluetoothProfile {
         map.put("compass_z",String.format("%.2f",v.z));
         return map;
     }
+
+	private String getCurrentTime(String timeFormat) {
+		return new SimpleDateFormat(timeFormat).format(System.currentTimeMillis());
+	}
+
+	public static ArrayList SensorData(){
+
+		for(int i=0;i<TList.size();i++){
+			arr.add(TList.get(i)+ Arrays.toString(AccList.get(i)).replace("]","").replace("[", ", ")
+					+Arrays.toString(GyroList.get(i)).replace("]","").replace("[", ", ")
+					+Arrays.toString(MagList.get(i)).replace("]","").replace("[", ", "));
+		}
+		return arr;
+	}
 }

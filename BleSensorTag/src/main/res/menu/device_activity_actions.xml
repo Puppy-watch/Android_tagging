@@ -21,4 +21,9 @@
         android:icon="@drawable/ic_action_about" 
         android:title="@string/about"/>
 
+    <item
+        android:id="@+id/opt_data"
+        android:icon="@drawable/ic_action_about"
+        android:title="Data"/>
+
 </menu>

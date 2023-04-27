@@ -72,31 +72,6 @@ public class TagListActivity extends MainActivity {
     public class Object implements Serializable {
     }
 
-    public void fileStorage(String str) {
-
-        String fileName = "tagging.txt";
-        FileOutputStream fos = null;
-        BufferedOutputStream bos = null;
-        DataOutputStream dos = null;
-
-        try{
-            fos = openFileOutput(fileName, MODE_PRIVATE);
-            bos = new BufferedOutputStream(fos);
-            dos = new DataOutputStream(bos);
-            dos.writeUTF(str);
-            dos.flush();
-        }catch (FileNotFoundException f){
-            return;
-        }catch (IOException e) {
-
-        }finally {
-            try{
-                if (dos != null) dos.close();
-                if (bos != null) bos.close();
-                if (fos != null) fos.close();
-            }catch (IOException e) {}
-        }
-    }
     public void writeFile(String str) {
 
         //외부 저장소(External Storage)가 마운트(인식) 되었을 때 동작

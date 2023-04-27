@@ -92,7 +92,7 @@ import android.widget.Toast;
 import com.example.ti.ble.common.BleDeviceInfo;
 import com.example.ti.ble.common.BluetoothLeService;
 import com.example.ti.ble.common.HCIDefines;
-import com.example.ti.ble.common.HelpView;
+import com.example.ti.ble.common.TaggingView;
 import com.example.ti.util.CustomToast;
 
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -221,9 +221,9 @@ public class MainActivity extends ViewPagerActivity {
 		mScanView = new ScanView();
 		mSectionsPagerAdapter.addSection(mScanView, "BLE Device List");
 		
-		HelpView hw = new HelpView();
-		hw.setParameters("help_scan.html", R.layout.fragment_help, R.id.webpage);
-		mSectionsPagerAdapter.addSection(hw, "Help");
+//		TaggingView hw = new TaggingView();
+//		hw.setParameters("help_scan.html", R.layout.fragment_tagging, R.id.webpage);
+//		mSectionsPagerAdapter.addSection(hw, "Help");
 
 		// Register the BroadcastReceiver
 		mFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);

@@ -4,7 +4,7 @@
   Copyright (c) 2013 - 2014 Texas Instruments Incorporated
 
   All rights reserved not granted herein.
-  Limited License. 
+  Limited License.
 
   Texas Instruments Incorporated grants a world-wide, royalty-free,
   non-exclusive license under copyrights and patents it now or hereafter
@@ -53,13 +53,11 @@
 package com.example.ti.ble.sensortag;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.app.AlertDialog.Builder;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -76,18 +74,14 @@ import android.content.res.XmlResourceParser;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.CountDownTimer;
-import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.view.LayoutInflater;
 // import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
-import android.widget.TextView;
 import android.widget.Toast;
 
 
@@ -96,9 +90,7 @@ import com.example.ti.ble.common.BluetoothGATTDefines;
 import com.example.ti.ble.common.BluetoothLeService;
 import com.example.ti.ble.common.GattInfo;
 import com.example.ti.ble.common.GenericBluetoothProfile;
-import com.example.ti.ble.common.HCIDefines;
-import com.example.ti.ble.common.HelpView;
-import com.example.ti.ble.sensortag.R;
+import com.example.ti.ble.common.TaggingView;
 import com.example.ti.ble.ti.profiles.TILampControlProfile;
 import com.example.ti.ble.ti.profiles.TIOADProfile;
 import com.example.ti.ble.common.IBMIoTCloudProfile;
@@ -136,6 +128,9 @@ import com.example.ti.util.PreferenceWR;
 	//GUI
 	private List<GenericBluetoothProfile> mProfiles;
 
+    public static DeviceActivity context_device;
+    ArrayList list;
+
 	public DeviceActivity() {
 		mResourceFragmentPager = R.layout.fragment_pager;
 		mResourceIdPager = R.id.pager;
@@ -151,6 +146,7 @@ import com.example.ti.util.PreferenceWR;
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		super.onCreate(savedInstanceState);
 		Intent intent = getIntent();
+        context_device = this;
 
 		// BLE
 		mBtLeService = BluetoothLeService.getInstance();
@@ -171,9 +167,9 @@ import com.example.ti.util.PreferenceWR;
 		// GUI
 		mDeviceView = new DeviceView();
 		mSectionsPagerAdapter.addSection(mDeviceView, "Sensors");
-		HelpView hw = new HelpView();
-		hw.setParameters("help_device.html", R.layout.fragment_help, R.id.webpage);
-		mSectionsPagerAdapter.addSection(hw, "Help");
+		TaggingView hw = new TaggingView();
+//		hw.setParameters("help_device.html", R.layout.fragment_tagging, R.id.webpage);
+		mSectionsPagerAdapter.addSection(hw, "Tagging");
 		mProfiles = new ArrayList<GenericBluetoothProfile>();
 		progressDialog = new ProgressDialog(DeviceActivity.this);
 		progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
@@ -236,6 +232,11 @@ import com.example.ti.util.PreferenceWR;
 		case R.id.opt_about:
 			openAboutDialog();
 			break;
+        case R.id.opt_data:
+            Intent intent = new Intent(this, TagListActivity.class);
+            list = SensorTagMovementProfile.SensorData();
+            intent.putExtra("data_list", list);
+            startActivityForResult(intent, 1);
 		default:
 			return super.onOptionsItemSelected(item);
 		}
@@ -432,7 +433,7 @@ import com.example.ti.util.PreferenceWR;
                             }
                             //Special profile for Cloud service
                             mqttProfile = new IBMIoTCloudProfile(context, mBluetoothDevice, null, mBtLeService);
-                            mProfiles.add(mqttProfile);
+//                            mProfiles.add(mqttProfile);
                             if (totalCharacteristics == 0) {
                                 //Something bad happened, we have a problem
                                 runOnUiThread(new Runnable() {
@@ -504,7 +505,7 @@ import com.example.ti.util.PreferenceWR;
                                 Log.d("DeviceActivity", "Configuring service with uuid : " + s.getUuid().toString());
                                 if (SensorTagHumidityProfile.isCorrectService(s)) {
                                     SensorTagHumidityProfile hum = new SensorTagHumidityProfile(context,mBluetoothDevice,s,mBtLeService);
-                                    mProfiles.add(hum);
+//                                    mProfiles.add(hum);
                                     if (nrNotificationsOn < maxNotifications) {
                                         hum.configureService();
                                         nrNotificationsOn++;
@@ -516,7 +517,7 @@ import com.example.ti.util.PreferenceWR;
                                 }
                                 if (SensorTagLuxometerProfile.isCorrectService(s)) {
                                     SensorTagLuxometerProfile lux = new SensorTagLuxometerProfile(context,mBluetoothDevice,s,mBtLeService);
-                                    mProfiles.add(lux);
+//                                    mProfiles.add(lux);
                                     if (nrNotificationsOn < maxNotifications) {
                                         lux.configureService();
                                         nrNotificationsOn++;
@@ -527,7 +528,7 @@ import com.example.ti.util.PreferenceWR;
                                 }
                                 if (SensorTagSimpleKeysProfile.isCorrectService(s)) {
                                     SensorTagSimpleKeysProfile key = new SensorTagSimpleKeysProfile(context,mBluetoothDevice,s,mBtLeService);
-                                    mProfiles.add(key);
+//                                    mProfiles.add(key);
                                     if (nrNotificationsOn < maxNotifications) {
                                         key.configureService();
                                         nrNotificationsOn++;
@@ -539,7 +540,7 @@ import com.example.ti.util.PreferenceWR;
                                 }
                                 if (SensorTagBarometerProfile.isCorrectService(s)) {
                                     SensorTagBarometerProfile baro = new SensorTagBarometerProfile(context,mBluetoothDevice,s,mBtLeService);
-                                    mProfiles.add(baro);
+//                                    mProfiles.add(baro);
                                     if (nrNotificationsOn < maxNotifications) {
                                         baro.configureService();
                                         nrNotificationsOn++;
@@ -551,7 +552,7 @@ import com.example.ti.util.PreferenceWR;
                                 }
                                 if (SensorTagAmbientTemperatureProfile.isCorrectService(s)) {
                                     SensorTagAmbientTemperatureProfile irTemp = new SensorTagAmbientTemperatureProfile(context,mBluetoothDevice,s,mBtLeService);
-                                    mProfiles.add(irTemp);
+//                                    mProfiles.add(irTemp);
                                     if (nrNotificationsOn < maxNotifications) {
                                         irTemp.configureService();
                                         nrNotificationsOn++;
@@ -563,7 +564,7 @@ import com.example.ti.util.PreferenceWR;
                                 }
                                 if (SensorTagIRTemperatureProfile.isCorrectService(s)) {
                                     SensorTagIRTemperatureProfile irTemp = new SensorTagIRTemperatureProfile(context,mBluetoothDevice,s,mBtLeService);
-                                    mProfiles.add(irTemp);
+//                                    mProfiles.add(irTemp);
                                     if (nrNotificationsOn < maxNotifications) {
                                         irTemp.configureService();
                                     }
@@ -613,7 +614,7 @@ import com.example.ti.util.PreferenceWR;
 
                                 if (DeviceInformationServiceProfile.isCorrectService(s)) {
                                     DeviceInformationServiceProfile devInfo = new DeviceInformationServiceProfile(context,mBluetoothDevice,s,mBtLeService);
-                                    mProfiles.add(devInfo);
+//                                    mProfiles.add(devInfo);
                                     devInfo.configureService();
                                     Log.d("DeviceActivity","Found Device Information Service");
                                 }
