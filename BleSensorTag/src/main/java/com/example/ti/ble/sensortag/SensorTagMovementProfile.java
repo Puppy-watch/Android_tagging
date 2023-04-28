@@ -155,7 +155,7 @@ public class SensorTagMovementProfile extends GenericBluetoothProfile {
             	Log.d("SensorTagMovementProfile","Sensor notification enable failed: " + this.configC.getUuid().toString() + " Error: " + error);
         }
 
-		this.periodWasUpdated(10);
+		this.periodWasUpdated(1000);
         this.isEnabled = true;
 	}
 	@Override 
@@ -250,8 +250,7 @@ public class SensorTagMovementProfile extends GenericBluetoothProfile {
 
 		for(int i=0;i<TList.size();i++){
 			arr.add(TList.get(i)+ Arrays.toString(AccList.get(i)).replace("]","").replace("[", ", ")
-					+Arrays.toString(GyroList.get(i)).replace("]","").replace("[", ", ")
-					+Arrays.toString(MagList.get(i)).replace("]","").replace("[", ", "));
+					+Arrays.toString(GyroList.get(i)).replace("]","").replace("[", ", "));
 		}
 		return arr;
 	}

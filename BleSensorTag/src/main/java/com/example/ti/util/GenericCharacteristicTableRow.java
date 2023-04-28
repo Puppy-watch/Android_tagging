@@ -126,7 +126,7 @@ public class GenericCharacteristicTableRow extends TableRow implements View.OnCl
 		this.setLayoutParams(new TableRow.LayoutParams(1));
 		this.setBackgroundColor(Color.TRANSPARENT);
 		this.setOnClickListener(this);
-		this.periodMinVal = 100;
+		this.periodMinVal = 10;
 		
 		// GATT database
 		Resources res = getResources();

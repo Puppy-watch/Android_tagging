@@ -620,7 +620,7 @@ import com.example.ti.util.PreferenceWR;
                                 }
                                 if (TIOADProfile.isCorrectService(s)) {
                                     TIOADProfile oad = new TIOADProfile(context,mBluetoothDevice,s,mBtLeService);
-                                    mProfiles.add(oad);
+//                                    mProfiles.add(oad);
                                     oad.configureService();
                                     mOadService = s;
                                     Log.d("DeviceActivity","Found TI OAD Service");
