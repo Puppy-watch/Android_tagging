@@ -2,9 +2,11 @@ package com.example.ti.ble.sensortag;
 
 import static android.content.Context.MODE_PRIVATE;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
@@ -79,7 +81,19 @@ public class TagListActivity extends MainActivity {
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
             //다운로드 폴더에 "tagging.txt" 이름으로 txt 파일 저장
             //Environment.DIRECTORY_DOWNLOADS - 기기의 기본 다운로드 폴더
-            File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath(), "tagging" + ".txt");
+            String fileName = "tagging.txt";
+            File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath(), fileName);
+            if(file.exists()) {
+                int i = 1;
+                while(true) {
+                    String newFileName = fileName.replace(".", "(" + i + ").");
+                    file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath(), newFileName);
+                    if(!file.exists()) {
+                        break;
+                    }
+                    i++;
+                }
+            }
             try {
                 FileWriter fw = new FileWriter(file, false);
                 fw.write(str);
