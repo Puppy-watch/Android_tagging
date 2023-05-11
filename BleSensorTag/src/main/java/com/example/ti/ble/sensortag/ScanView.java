@@ -111,7 +111,7 @@ public class ScanView extends Fragment {
     mDeviceListView = (ListView) view.findViewById(R.id.device_list);
     mDeviceListView.setClickable(true);
     mDeviceListView.setOnItemClickListener(mDeviceClickListener);
-    mEmptyMsg = (TextView)view.findViewById(R.id.no_device);    
+    mEmptyMsg = (TextView)view.findViewById(R.id.no_device);
     mBusy = false;
     
     // Alert parent activity
@@ -153,7 +153,7 @@ public class ScanView extends Fragment {
 		if (deviceList.size() > 0) {
 			mEmptyMsg.setVisibility(View.GONE);
 		} else {
-			mEmptyMsg.setVisibility(View.VISIBLE);			
+			mEmptyMsg.setVisibility(View.INVISIBLE);
 		}
 	}
 

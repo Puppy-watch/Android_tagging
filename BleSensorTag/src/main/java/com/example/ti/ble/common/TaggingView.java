@@ -136,55 +136,55 @@ public class TaggingView extends Fragment implements View.OnClickListener {
     SimpleDateFormat dataFormatTag = new SimpleDateFormat("HHmmss");
     switch (view.getId()) {
       case R.id.stand_button:
-        LabelList.add(", 0");
+        LabelList.add("0");
         LabelTimeList.add(dataFormatTag.format(date));
         tagTv = "서있기 / " + dateFormat.format(date);
         timeTv.setText(tagTv);
         break;
       case R.id.lay_button:
-        LabelList.add(", 1");
+        LabelList.add("1");
         LabelTimeList.add(dataFormatTag.format(date));
         tagTv = "눕기+엎드리기 / " + dateFormat.format(date);
         timeTv.setText(tagTv);
         break;
       case R.id.sit_button:
-        LabelList.add(", 2");
+        LabelList.add("2");
         LabelTimeList.add(dataFormatTag.format(date));
         tagTv = "앉기 / " + dateFormat.format(date);
         timeTv.setText(tagTv);
         break;
       case R.id.walk_button:
-        LabelList.add(", 3");
+        LabelList.add("3");
         LabelTimeList.add(dataFormatTag.format(date));
         tagTv = "걷기 / " + dateFormat.format(date);
         timeTv.setText(tagTv);
         break;
       case R.id.slowWalk_button:
-        LabelList.add(", 4");
+        LabelList.add("4");
         LabelTimeList.add(dataFormatTag.format(date));
         tagTv = "느리게 걷기 / " + dateFormat.format(date);
         timeTv.setText(tagTv);
         break;
       case R.id.run_button:
-        LabelList.add(", 5");
+        LabelList.add("5");
         LabelTimeList.add(dataFormatTag.format(date));
         tagTv = "뛰기 / " + dateFormat.format(date);
         timeTv.setText(tagTv);
         break;
       case R.id.eat_button:
-        LabelList.add(", 6");
+        LabelList.add("6");
         LabelTimeList.add(dataFormatTag.format(date));
         tagTv = "먹기 / " + dateFormat.format(date);
         timeTv.setText(tagTv);
         break;
       case R.id.dig_button:
-        LabelList.add(", 7");
+        LabelList.add("7");
         LabelTimeList.add(dataFormatTag.format(date));
         tagTv = "파기 / " + dateFormat.format(date);
         timeTv.setText(tagTv);
         break;
       case R.id.stop_button:
-        LabelList.add(", 8");
+        LabelList.add("8");
         LabelTimeList.add(dataFormatTag.format(date));
         tagTv = "STOP / " + dateFormat.format(date);
         timeTv.setText(tagTv);

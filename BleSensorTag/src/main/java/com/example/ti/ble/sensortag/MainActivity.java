@@ -186,6 +186,7 @@ public class MainActivity extends ViewPagerActivity {
 				}
 			});
 			builder.show();
+
 		}
 
 
