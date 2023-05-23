@@ -52,9 +52,14 @@
  **************************************************************************************************/
 package com.example.ti.ble.sensortag;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
@@ -74,6 +79,8 @@ import android.content.res.XmlResourceParser;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
 // import android.util.Log;
@@ -100,6 +107,12 @@ import com.example.ti.util.PreferenceWR;
 @SuppressLint("InflateParams") public class DeviceActivity extends ViewPagerActivity {
 	// Log
 	// private static String TAG = "DeviceActivity";
+
+    ArrayList array;
+    private static final int PERMISSION_REQUEST_FILE = 1;
+
+    private Handler handler;
+    private Timer timer;
 
 	// Activity
 	public static final String EXTRA_DEVICE = "EXTRA_DEVICE";
@@ -185,7 +198,68 @@ import com.example.ti.util.PreferenceWR;
 		XmlResourceParser xpp = res.getXml(R.xml.gatt_uuid);
 		new GattInfo(xpp);
 
+        //auto save
+        array = SensorTagMovementProfile.SensorData();
+
+        final StringBuffer sb = new StringBuffer();
+        sb.append("Sensor Data\n");
+        for (int i = 0; i < array.size(); i++) {
+            sb.append(array.get(i));
+            sb.append("\n");
+        }
+        final String result = sb.toString();
+
+        handler = new Handler();
+        timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        writeFile(result);
+                        Toast.makeText(getApplicationContext(), "자동 저장되었습니다.", Toast.LENGTH_SHORT).show();
+                        ((SensorTagMovementProfile) SensorTagMovementProfile.context_sensortag_mov).TList.clear();
+                        ((DeviceActivity) DeviceActivity.context_device).list.clear();
+                        ((TaggingView) TaggingView.context_help).LabelTimeList.clear();
+                        ((TaggingView) TaggingView.context_help).LabelList.clear();
+                        array.clear();
+                    }
+                });
+            }
+        }, 2 * 60 * 1000); // 2 minutes in milliseconds
+
 	}
+
+    public void writeFile(String str) {
+        // Check if external storage is mounted
+        if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+            // Create the file in the Downloads folder
+            String fileName = "tagging.txt";
+            File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath(), fileName);
+            if (file.exists()) {
+                int i = 1;
+                while (true) {
+                    String newFileName = fileName.replace(".", "(" + i + ").");
+                    file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath(), newFileName);
+                    if (!file.exists()) {
+                        break;
+                    }
+                    i++;
+                }
+            }
+            try {
+                FileWriter fw = new FileWriter(file, false);
+                fw.write(str);
+                fw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                Toast.makeText(getApplicationContext(), "ERROR", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(getApplicationContext(), "ERROR", Toast.LENGTH_SHORT).show();
+        }
+    }
 
 	@Override
 	public void onDestroy() {
@@ -211,6 +285,11 @@ import com.example.ti.util.PreferenceWR;
         this.mDeviceView = null;
 		finishActivity(PREF_ACT_REQ);
 		finishActivity(FWUPDATE_ACT_REQ);
+
+        // Cancel the timer when the activity is destroyed
+        if (timer != null) {
+            timer.cancel();
+        }
 	}
 
 	@Override

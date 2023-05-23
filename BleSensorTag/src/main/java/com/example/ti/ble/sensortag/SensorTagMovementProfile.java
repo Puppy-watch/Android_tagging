@@ -298,5 +298,6 @@ public class SensorTagMovementProfile extends GenericBluetoothProfile {
 		// Clear the data lists
 		resetDataLists();
 	}
+
 }
 

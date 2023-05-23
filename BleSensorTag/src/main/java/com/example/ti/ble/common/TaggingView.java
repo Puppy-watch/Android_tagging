@@ -192,4 +192,5 @@ public class TaggingView extends Fragment implements View.OnClickListener {
         break;
     }
   }
+
 }
