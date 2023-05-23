@@ -52,21 +52,31 @@
  **************************************************************************************************/
 package com.example.ti.ble.sensortag;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Environment;
 import android.text.Html;
 import android.util.Log;
 import android.widget.CompoundButton;
+import android.widget.SeekBar;
 
 import com.example.ti.ble.common.BluetoothLeService;
 import com.example.ti.ble.common.GattInfo;
@@ -81,18 +91,21 @@ public class SensorTagMovementProfile extends GenericBluetoothProfile {
 	static ArrayList<Double[]> AccList = new ArrayList<>();
 	static ArrayList<Double[]> GyroList = new ArrayList<>();
 	static ArrayList<Double[]> MagList = new ArrayList<>();
-	static ArrayList<String> LabelTimeList = ((TaggingView)TaggingView.context_help).LabelTimeList;
-	static ArrayList<String> LabelList = ((TaggingView)TaggingView.context_help).LabelList;
+	static ArrayList<String> LabelTimeList = ((TaggingView) TaggingView.context_help).LabelTimeList;
+	static ArrayList<String> LabelList = ((TaggingView) TaggingView.context_help).LabelList;
 	public static SensorTagMovementProfile context_sensortag_mov;
-	
-	public SensorTagMovementProfile(Context con,BluetoothDevice device,BluetoothGattService service,BluetoothLeService controller) {
-		super(con,device,service,controller);
-		this.tRow =  new SensorTagMovementTableRow(con);
+	private Timer timer;
+	private boolean isSavingData;
+
+	public SensorTagMovementProfile(Context con, BluetoothDevice device, BluetoothGattService service,
+									BluetoothLeService controller) {
+		super(con, device, service, controller);
+		this.tRow = new SensorTagMovementTableRow(con);
 
 		context_sensortag_mov = this;
-		
+
 		List<BluetoothGattCharacteristic> characteristics = this.mBTService.getCharacteristics();
-		
+
 		for (BluetoothGattCharacteristic c : characteristics) {
 			if (c.getUuid().toString().equals(SensorTagGatt.UUID_MOV_DATA.toString())) {
 				this.dataC = c;
@@ -104,156 +117,186 @@ public class SensorTagMovementProfile extends GenericBluetoothProfile {
 				this.periodC = c;
 			}
 		}
-		
-		
+
 		this.tRow.setIcon(this.getIconPrefix(), this.dataC.getUuid().toString());
-		
+
 		this.tRow.title.setText(GattInfo.uuidToName(UUID.fromString(this.dataC.getUuid().toString())));
 		this.tRow.uuidLabel.setText(this.dataC.getUuid().toString());
 		this.tRow.value.setText("X:0.00G, Y:0.00G, Z:0.00G");
-		SensorTagMovementTableRow row = (SensorTagMovementTableRow)this.tRow;
-		
+		SensorTagMovementTableRow row = (SensorTagMovementTableRow) this.tRow;
+
 		row.gyroValue.setText("X:0.00'/s, Y:0.00'/s, Z:0.00'/s");
 		row.magValue.setText("X:0.00mT, Y:0.00mT, Z:0.00mT");
-        row.WOS.setChecked(true);
-        row.WOS.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                byte b[] = new byte[] {0x7F,0x00};
-                if (isChecked) {
-                    b[0] = (byte)0xFF;
-                }
-                int error = mBTLeService.writeCharacteristic(configC, b);
-                if (error != 0) {
-                    if (configC != null)
-                        Log.d("SensorTagMovementProfile","Sensor config failed: " + configC.getUuid().toString() + " Error: " + error);
-                }
-            }
-        });
+		row.WOS.setChecked(true);
+		row.WOS.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				byte b[] = new byte[]{0x7F, 0x00};
+				if (isChecked) {
+					b[0] = (byte) 0xFF;
+				}
+				int error = mBTLeService.writeCharacteristic(configC, b);
+				if (error != 0) {
+					if (configC != null)
+						Log.d("SensorTagMovementProfile", "Sensor config failed: " + configC.getUuid().toString() + " Error: " + error);
+				}
+			}
+		});
 		this.tRow.periodBar.setProgress(100);
+
+		// Initialize timer and set saving data flag to false
+		timer = new Timer();
+		isSavingData = false;
 	}
-	
+
 	public static boolean isCorrectService(BluetoothGattService service) {
 		if ((service.getUuid().toString().compareTo(SensorTagGatt.UUID_MOV_SERV.toString())) == 0) {
 			return true;
-		}
-		else return false;
+		} else return false;
 	}
-	@Override 
+
+	@Override
 	public void enableService() {
-        byte b[] = new byte[] {0x7F,0x00};
-        SensorTagMovementTableRow row = (SensorTagMovementTableRow)this.tRow;
-        if (row.WOS.isChecked()) b[0] = (byte)0xFF;
-        int error = mBTLeService.writeCharacteristic(this.configC, b);
-        if (error != 0) {
-            if (this.configC != null)
-            	Log.d("SensorTagMovementProfile","Sensor config failed: " + this.configC.getUuid().toString() + " Error: " + error);
-        }
-        error = this.mBTLeService.setCharacteristicNotification(this.dataC, true);
-        if (error != 0) {
-            if (this.dataC != null)
-            	Log.d("SensorTagMovementProfile","Sensor notification enable failed: " + this.configC.getUuid().toString() + " Error: " + error);
-        }
+		byte b[] = new byte[]{0x7F, 0x00};
+		SensorTagMovementTableRow row = (SensorTagMovementTableRow) this.tRow;
+		if (row.WOS.isChecked()) b[0] = (byte) 0xFF;
+		int error = mBTLeService.writeCharacteristic(this.configC, b);
+		if (error != 0) {
+			if (this.configC != null)
+				Log.d("SensorTagMovementProfile", "Sensor config failed: " + this.configC.getUuid().toString() + " Error: " + error);
+		}
+		error = this.mBTLeService.setCharacteristicNotification(this.dataC, true);
+		if (error != 0) {
+			if (this.dataC != null)
+				Log.d("SensorTagMovementProfile", "Sensor notification enable failed: " + this.configC.getUuid().toString() + " Error: " + error);
+		}
 
 		this.periodWasUpdated(10);
-        this.isEnabled = true;
+		this.isEnabled = true;
+
+		// Start timer to save data every 2 minutes
+		startDataSavingTimer();
 	}
-	@Override 
-	public void disableService() {
-        int error = mBTLeService.writeCharacteristic(this.configC, new byte[] {0x00,0x00});
-        if (error != 0) {
-            if (this.configC != null)
-            	Log.d("SensorTagMovementProfile","Sensor config failed: " + this.configC.getUuid().toString() + " Error: " + error);
-        }
-        error = this.mBTLeService.setCharacteristicNotification(this.dataC, false);
-        if (error != 0) {
-            if (this.dataC != null)
-            	Log.d("SensorTagMovementProfile","Sensor notification disable failed: " + this.configC.getUuid().toString() + " Error: " + error);
-        }
-        this.isEnabled = false;
-	}
-	public void didWriteValueForCharacteristic(BluetoothGattCharacteristic c) {
-		
-	}
-	public void didReadValueForCharacteristic(BluetoothGattCharacteristic c) {
-		
-	}
+
 	@Override
-    public void didUpdateValueForCharacteristic(BluetoothGattCharacteristic c) {
-        byte[] value = c.getValue();
-			if (c.equals(this.dataC)){
-				Point3D v;
-				v = Sensor.MOVEMENT_ACC.convert(value);
-				if (this.tRow.config == false) this.tRow.value.setText(Html.fromHtml(String.format("<font color=#FF0000>X:%.2fG</font>, <font color=#00967D>Y:%.2fG</font>, <font color=#00000>Z:%.2fG</font>", v.x, v.y, v.z)));
-				this.tRow.sl1.addValue((float)v.x);
-				this.tRow.sl2.addValue((float)v.y);
-				this.tRow.sl3.addValue((float)v.z);
-
-				String nowTime = getCurrentTime("YYYY-MM-dd, HH:mm:ss");
-				String nowTimeList = getCurrentTime("HHmmss");
-				if(LabelTimeList.size() == 0) {
-
-				}
-				else {
-					for(int i = 0; i < LabelTimeList.size(); i++) {
-						if(i == LabelTimeList.size() - 1) {
-//							TList.add(nowTime + LabelList.get(i));
-							TList.add(LabelList.get(i));
-						}
-						else {
-							while(Integer.parseInt(LabelTimeList.get(i)) <= (Integer.parseInt(nowTimeList)) & ((Integer.parseInt(nowTimeList) < Integer.parseInt(LabelTimeList.get(i+1))))) {
-//								TList.add(nowTime + LabelList.get(i));
-								TList.add(LabelList.get(i));
-							}
-						}
-					}
-				}
-				AccList.add(new Double[]{v.x, v.y, v.z});
-
-				v = Sensor.MOVEMENT_GYRO.convert(value);
-				SensorTagMovementTableRow row = (SensorTagMovementTableRow)this.tRow;
-				row.gyroValue.setText(Html.fromHtml(String.format("<font color=#FF0000>X:%.2f°/s</font>, <font color=#00967D>Y:%.2f°/s</font>, <font color=#00000>Z:%.2f°/s</font>", v.x, v.y, v.z)));
-				row.sl4.addValue((float)v.x);
-				row.sl5.addValue((float)v.y);
-				row.sl6.addValue((float)v.z);
-				GyroList.add(new Double[]{v.x, v.y, v.z});
-
-				v = Sensor.MOVEMENT_MAG.convert(value);
-				row.magValue.setText(Html.fromHtml(String.format("<font color=#FF0000>X:%.2fuT</font>, <font color=#00967D>Y:%.2fuT</font>, <font color=#00000>Z:%.2fuT</font>", v.x, v.y, v.z)));
-				row.sl7.addValue((float)v.x);
-				row.sl8.addValue((float)v.y);
-				row.sl9.addValue((float)v.z);
-				MagList.add(new Double[]{v.x, v.y, v.z});
-			}
-	}
-    @Override
-    public Map<String,String> getMQTTMap() {
-        Point3D v = Sensor.MOVEMENT_ACC.convert(this.dataC.getValue());
-        Map<String,String> map = new HashMap<String, String>();
-        map.put("acc_x",String.format("%.2f",v.x));
-        map.put("acc_y",String.format("%.2f",v.y));
-        map.put("acc_z",String.format("%.2f",v.z));
-        v = Sensor.MOVEMENT_GYRO.convert(this.dataC.getValue());
-        map.put("gyro_x",String.format("%.2f",v.x));
-        map.put("gyro_y",String.format("%.2f",v.y));
-        map.put("gyro_z",String.format("%.2f",v.z));
-        v = Sensor.MOVEMENT_MAG.convert(this.dataC.getValue());
-        map.put("compass_x",String.format("%.2f",v.x));
-        map.put("compass_y",String.format("%.2f",v.y));
-        map.put("compass_z",String.format("%.2f",v.z));
-        return map;
-    }
-
-	private String getCurrentTime(String timeFormat) {
-		return new SimpleDateFormat(timeFormat).format(System.currentTimeMillis());
-	}
-
-	public static ArrayList SensorData(){
-
-		for(int i=0;i<TList.size();i++){
-			arr.add(TList.get(i)+ Arrays.toString(AccList.get(i)).replace("]","").replace("[", ", ")
-					+Arrays.toString(GyroList.get(i)).replace("]","").replace("[", ", "));
+	public void disableService() {
+		int error = mBTLeService.writeCharacteristic(this.configC, new byte[]{0x00, 0x00});
+		if (error != 0) {
+			if (this.configC != null)
+				Log.d("SensorTagMovementProfile", "Sensor config failed: " + this.configC.getUuid().toString() + " Error: " + error);
 		}
-		return arr;
+		error = this.mBTLeService.setCharacteristicNotification(this.dataC, false);
+		if (error != 0) {
+			if (this.dataC != null)
+				Log.d("SensorTagMovementProfile", "Sensor notification disable failed: " + this.configC.getUuid().toString() + " Error: " + error);
+		}
+		this.isEnabled = false;
+
+		// Stop the timer and reset the data
+		stopDataSavingTimer();
+		resetDataLists();
+	}
+
+	public void didWriteValueForCharacteristic(BluetoothGattCharacteristic c) {
+
+	}
+
+	public void didReadValueForCharacteristic(BluetoothGattCharacteristic c) {
+
+	}
+
+	@Override
+	public void didUpdateValueForCharacteristic(BluetoothGattCharacteristic c) {
+		byte[] value = c.getValue();
+		if (c.equals(this.dataC)) {
+			Point3D v;
+			v = Sensor.MOVEMENT_ACC.convert(value);
+			if (this.tRow.config == false)
+				this.tRow.value.setText(Html.fromHtml(String.format("<font color=#FF0000>X:%.2fG</font>, <font color=#00FF00>Y:%.2fG</font>, <font color=#0000FF>Z:%.2fG</font>", v.x, v.y, v.z)));
+			AccList.add(new Double[]{v.x, v.y, v.z});
+			v = Sensor.MOVEMENT_GYRO.convert(value);
+			if (this.tRow.config == false)
+				((SensorTagMovementTableRow) this.tRow).gyroValue.setText(Html.fromHtml(String.format("<font color=#FF0000>X:%.2f'/s</font>, <font color=#00FF00>Y:%.2f'/s</font>, <font color=#0000FF>Z:%.2f'/s</font>", v.x, v.y, v.z)));
+			GyroList.add(new Double[]{v.x, v.y, v.z});
+			v = Sensor.MOVEMENT_MAG.convert(value);
+			if (this.tRow.config == false)
+				((SensorTagMovementTableRow) this.tRow).magValue.setText(Html.fromHtml(String.format("<font color=#FF0000>X:%.2f mT</font>, <font color=#00FF00>Y:%.2f mT</font>, <font color=#0000FF>Z:%.2f mT</font>", v.x, v.y, v.z)));
+			MagList.add(new Double[]{v.x, v.y, v.z});
+		}
+	}
+
+	public static double[] toArray(ArrayList<Double[]> list) {
+		double[] array = new double[list.size() * 3];
+		int index = 0;
+		for (Double[] triple : list) {
+			array[index++] = triple[0];
+			array[index++] = triple[1];
+			array[index++] = triple[2];
+		}
+		return array;
+	}
+
+	private void startDataSavingTimer() {
+		if (!isSavingData) {
+			timer.schedule(new TimerTask() {
+				@Override
+				public void run() {
+					saveDataToFile();
+				}
+			}, 0, 120000); // Save data every 2 minutes
+			isSavingData = true;
+		}
+	}
+
+	private void stopDataSavingTimer() {
+		timer.cancel();
+		isSavingData = false;
+	}
+
+	private void resetDataLists() {
+		AccList.clear();
+		GyroList.clear();
+		MagList.clear();
+	}
+
+	private void saveDataToFile() {
+		// 외부 저장소의 Download 폴더 경로 가져오기
+		String downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath();
+
+		Date now = new Date();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
+		String fileName = "tagging";
+		String tag = LabelList.get(LabelList.size() - 1);
+		String time = LabelTimeList.get(LabelTimeList.size() - 1);
+		String filePath = downloadPath + File.separator + fileName + "_" + tag + "_" + time + "_" + sdf.format(now) + ".txt";
+
+		// Check if a file with the same name exists, and if so, increment the number in parentheses
+		int fileIndex = 0;
+		while (arr.contains(filePath)) {
+			fileIndex++;
+			filePath = downloadPath + File.separator + fileName + "(" + fileIndex + ")" + "_" + tag + "_" + time + "_" + sdf.format(now) + ".txt";
+		}
+
+		arr.add(filePath);
+
+		try {
+			FileWriter writer = new FileWriter(filePath);
+			writer.write("Accelerometer\n");
+			writer.write(Arrays.toString(toArray(AccList)) + "\n");
+			writer.write("Gyroscope\n");
+			writer.write(Arrays.toString(toArray(GyroList)) + "\n");
+			writer.write("Magnetometer\n");
+			writer.write(Arrays.toString(toArray(MagList)) + "\n");
+			writer.flush();
+			writer.close();
+			Log.d("SensorTagMovementProfile", "Data saved to file: " + filePath);
+		} catch (IOException e) {
+			e.printStackTrace();
+			Log.d("SensorTagMovementProfile", "Error saving data to file: " + filePath);
+		}
+
+		// Clear the data lists
+		resetDataLists();
 	}
 }
+
