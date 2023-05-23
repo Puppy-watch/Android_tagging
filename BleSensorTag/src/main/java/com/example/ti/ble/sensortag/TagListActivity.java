@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -32,6 +33,9 @@ public class TagListActivity extends MainActivity {
     ArrayList<String> array;
     ArrayAdapter<String> adapter;
     private static final int PERMISSION_REQUEST_FILE = 1;
+    private static final long AUTO_SAVE_INTERVAL = 2 * 60 * 1000; // 2 minutes
+    private Handler autoSaveHandler;
+    private Runnable autoSaveRunnable;
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -88,7 +92,7 @@ public class TagListActivity extends MainActivity {
         listView.setAdapter(adapter);
 
 
-        StringBuffer sb = new StringBuffer();
+        final StringBuffer sb = new StringBuffer();
         sb.append("Sensor Data\n");
 
         for(int i=0;i<array.size();i++){
@@ -111,18 +115,27 @@ public class TagListActivity extends MainActivity {
                 dialog(view);
             }
         });
+
+        // Schedule auto-saving
+        autoSaveHandler = new Handler();
+        autoSaveRunnable = new Runnable() {
+            @Override
+            public void run() {
+                writeFile(result);
+                Toast.makeText(getApplicationContext(), "자동 저장되었습니다.", Toast.LENGTH_SHORT).show();
+                autoSaveHandler.postDelayed(this, AUTO_SAVE_INTERVAL);
+            }
+        };
+        autoSaveHandler.postDelayed(autoSaveRunnable, AUTO_SAVE_INTERVAL);
     }
 
     public class Object implements Serializable {
     }
 
     public void writeFile(String str) {
-
-        //외부 저장소(External Storage)가 마운트(인식) 되었을 때 동작
-//getExternalStorageState() 함수를 통해 외부저장장치가 Mount 되어 있는지를 확인
+        // External Storage (SD Card) availability check
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            //다운로드 폴더에 "tagging.txt" 이름으로 txt 파일 저장
-            //Environment.DIRECTORY_DOWNLOADS - 기기의 기본 다운로드 폴더
+            // Save the file with name "tagging.txt" in the Downloads folder
             String fileName = "tagging.txt";
             File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath(), fileName);
             if(file.exists()) {
@@ -146,7 +159,6 @@ public class TagListActivity extends MainActivity {
             }
         } else {
             Toast.makeText(getApplicationContext(), "ERROR", Toast.LENGTH_SHORT).show();
-
         }
     }
 
@@ -167,5 +179,12 @@ public class TagListActivity extends MainActivity {
         });
         builder.setNegativeButton("Cancle", null);
         builder.show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Remove auto-saving callbacks
+        autoSaveHandler.removeCallbacks(autoSaveRunnable);
     }
 }
