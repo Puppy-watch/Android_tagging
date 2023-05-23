@@ -105,8 +105,8 @@ import com.example.ti.util.PreferenceWR;
 
 
 @SuppressLint("InflateParams") public class DeviceActivity extends ViewPagerActivity {
-	// Log
-	// private static String TAG = "DeviceActivity";
+    // Log
+    // private static String TAG = "DeviceActivity";
 
     ArrayList array;
     private static final int PERMISSION_REQUEST_FILE = 1;
@@ -114,89 +114,89 @@ import com.example.ti.util.PreferenceWR;
     private Handler handler;
     private Timer timer;
 
-	// Activity
-	public static final String EXTRA_DEVICE = "EXTRA_DEVICE";
-	private static final int PREF_ACT_REQ = 0;
-	private static final int FWUPDATE_ACT_REQ = 1;
+    // Activity
+    public static final String EXTRA_DEVICE = "EXTRA_DEVICE";
+    private static final int PREF_ACT_REQ = 0;
+    private static final int FWUPDATE_ACT_REQ = 1;
 
-	private DeviceView mDeviceView = null;
+    private DeviceView mDeviceView = null;
 
-	// BLE
-	private BluetoothLeService mBtLeService = null;
-	private BluetoothDevice mBluetoothDevice = null;
-	private BluetoothGatt mBtGatt = null;
-	private List<BluetoothGattService> mServiceList = null;
-	private boolean mServicesRdy = false;
-	private boolean mIsReceiving = false;
+    // BLE
+    private BluetoothLeService mBtLeService = null;
+    private BluetoothDevice mBluetoothDevice = null;
+    private BluetoothGatt mBtGatt = null;
+    private List<BluetoothGattService> mServiceList = null;
+    private boolean mServicesRdy = false;
+    private boolean mIsReceiving = false;
     private IBMIoTCloudProfile mqttProfile;
 
-	// SensorTagGatt
-	private BluetoothGattService mOadService = null;
-	private BluetoothGattService mConnControlService = null;
+    // SensorTagGatt
+    private BluetoothGattService mOadService = null;
+    private BluetoothGattService mConnControlService = null;
     private BluetoothGattService mTestService = null;
-	private boolean mIsSensorTag2;
-	private String mFwRev;
-	public ProgressDialog progressDialog;
+    private boolean mIsSensorTag2;
+    private String mFwRev;
+    public ProgressDialog progressDialog;
 
-	//GUI
-	private List<GenericBluetoothProfile> mProfiles;
+    //GUI
+    private List<GenericBluetoothProfile> mProfiles;
 
     public static DeviceActivity context_device;
     ArrayList list;
 
-	public DeviceActivity() {
-		mResourceFragmentPager = R.layout.fragment_pager;
-		mResourceIdPager = R.id.pager;
-		mFwRev = new String("1.5"); // Assuming all SensorTags are up to date until actual FW revision is read
-	}
+    public DeviceActivity() {
+        mResourceFragmentPager = R.layout.fragment_pager;
+        mResourceIdPager = R.id.pager;
+        mFwRev = new String("1.5"); // Assuming all SensorTags are up to date until actual FW revision is read
+    }
 
-	public static DeviceActivity getInstance() {
-		return (DeviceActivity) mThis;
-	}
+    public static DeviceActivity getInstance() {
+        return (DeviceActivity) mThis;
+    }
 
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
-		super.onCreate(savedInstanceState);
-		Intent intent = getIntent();
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+        super.onCreate(savedInstanceState);
+        Intent intent = getIntent();
         context_device = this;
 
-		// BLE
-		mBtLeService = BluetoothLeService.getInstance();
-		mBluetoothDevice = intent.getParcelableExtra(EXTRA_DEVICE);
-		mServiceList = new ArrayList<BluetoothGattService>();
+        // BLE
+        mBtLeService = BluetoothLeService.getInstance();
+        mBluetoothDevice = intent.getParcelableExtra(EXTRA_DEVICE);
+        mServiceList = new ArrayList<BluetoothGattService>();
 
-		mIsSensorTag2 = false;
-		// Determine type of SensorTagGatt
-		String deviceName = mBluetoothDevice.getName();
-		if ((deviceName.equals("SensorTag2")) ||(deviceName.equals("CC2650 SensorTag"))) {
-			mIsSensorTag2 = true;
-		}
-		else mIsSensorTag2 = false;
+        mIsSensorTag2 = false;
+        // Determine type of SensorTagGatt
+        String deviceName = mBluetoothDevice.getName();
+        if ((deviceName.equals("SensorTag2")) ||(deviceName.equals("CC2650 SensorTag"))) {
+            mIsSensorTag2 = true;
+        }
+        else mIsSensorTag2 = false;
 
-		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
-		// Log.i(TAG, "Preferences for: " + deviceName);
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+        // Log.i(TAG, "Preferences for: " + deviceName);
 
-		// GUI
-		mDeviceView = new DeviceView();
-		mSectionsPagerAdapter.addSection(mDeviceView, "Sensors");
-		TaggingView hw = new TaggingView();
+        // GUI
+        mDeviceView = new DeviceView();
+        mSectionsPagerAdapter.addSection(mDeviceView, "Sensors");
+        TaggingView hw = new TaggingView();
 //		hw.setParameters("help_device.html", R.layout.fragment_tagging, R.id.webpage);
-		mSectionsPagerAdapter.addSection(hw, "Tagging");
-		mProfiles = new ArrayList<GenericBluetoothProfile>();
-		progressDialog = new ProgressDialog(DeviceActivity.this);
-		progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-		progressDialog.setIndeterminate(true);
-		progressDialog.setTitle("Discovering Services");
+        mSectionsPagerAdapter.addSection(hw, "Tagging");
+        mProfiles = new ArrayList<GenericBluetoothProfile>();
+        progressDialog = new ProgressDialog(DeviceActivity.this);
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        progressDialog.setIndeterminate(true);
+        progressDialog.setTitle("Discovering Services");
         progressDialog.setMessage("");
-		progressDialog.setMax(100);
+        progressDialog.setMax(100);
         progressDialog.setProgress(0);
         progressDialog.show();
 
         // GATT database
-		Resources res = getResources();
-		XmlResourceParser xpp = res.getXml(R.xml.gatt_uuid);
-		new GattInfo(xpp);
+        Resources res = getResources();
+        XmlResourceParser xpp = res.getXml(R.xml.gatt_uuid);
+        new GattInfo(xpp);
 
         //auto save
         array = SensorTagMovementProfile.SensorData();
@@ -229,7 +229,7 @@ import com.example.ti.util.PreferenceWR;
             }
         }, 2 * 60 * 1000); // 2 minutes in milliseconds
 
-	}
+    }
 
     public void writeFile(String str) {
         // Check if external storage is mounted
@@ -261,9 +261,9 @@ import com.example.ti.util.PreferenceWR;
         }
     }
 
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
         if (mqttProfile != null) {
             mqttProfile.disconnect();
 
@@ -283,94 +283,94 @@ import com.example.ti.util.PreferenceWR;
         this.mProfiles = null;
         this.mDeviceView.removeRowsFromTable();
         this.mDeviceView = null;
-		finishActivity(PREF_ACT_REQ);
-		finishActivity(FWUPDATE_ACT_REQ);
+        finishActivity(PREF_ACT_REQ);
+        finishActivity(FWUPDATE_ACT_REQ);
 
         // Cancel the timer when the activity is destroyed
         if (timer != null) {
             timer.cancel();
         }
-	}
+    }
 
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		this.optionsMenu = menu;
-		// Inflate the menu items for use in the action bar
-		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.device_activity_actions, menu);
-		return super.onCreateOptionsMenu(menu);
-	}
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        this.optionsMenu = menu;
+        // Inflate the menu items for use in the action bar
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.device_activity_actions, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
 
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		// Handle presses on the action bar items
-		switch (item.getItemId()) {
-		case R.id.opt_prefs:
-			startPreferenceActivity();
-			break;
-		case R.id.opt_about:
-			openAboutDialog();
-			break;
-        case R.id.opt_data:
-            Intent intent = new Intent(this, TagListActivity.class);
-            list = SensorTagMovementProfile.SensorData();
-            intent.putExtra("data_list", list);
-            startActivityForResult(intent, 1);
-		default:
-			return super.onOptionsItemSelected(item);
-		}
-		return true;
-	}
-	public boolean isEnabledByPrefs(String prefName) {
-		String preferenceKeyString = "pref_"
-				+ prefName;
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle presses on the action bar items
+        switch (item.getItemId()) {
+            case R.id.opt_prefs:
+                startPreferenceActivity();
+                break;
+            case R.id.opt_about:
+                openAboutDialog();
+                break;
+            case R.id.opt_data:
+                Intent intent = new Intent(this, TagListActivity.class);
+                list = SensorTagMovementProfile.SensorData();
+                intent.putExtra("data_list", list);
+                startActivityForResult(intent, 1);
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+        return true;
+    }
+    public boolean isEnabledByPrefs(String prefName) {
+        String preferenceKeyString = "pref_"
+                + prefName;
 
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mBtLeService);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mBtLeService);
 
-		Boolean defaultValue = true;
-		return prefs.getBoolean(preferenceKeyString, defaultValue);
-	}
-	@Override
-	protected void onResume() {
-		// Log.d(TAG, "onResume");
-		super.onResume();
-		if (!mIsReceiving) {
-			registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
-			mIsReceiving = true;
-		}
-		for (GenericBluetoothProfile p : mProfiles) {
+        Boolean defaultValue = true;
+        return prefs.getBoolean(preferenceKeyString, defaultValue);
+    }
+    @Override
+    protected void onResume() {
+        // Log.d(TAG, "onResume");
+        super.onResume();
+        if (!mIsReceiving) {
+            registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+            mIsReceiving = true;
+        }
+        for (GenericBluetoothProfile p : mProfiles) {
             if (p.isConfigured != true) p.configureService();
             if (p.isEnabled != true) p.enableService();
-			p.onResume();
-		}
-		this.mBtLeService.abortTimedDisconnect();
-	}
+            p.onResume();
+        }
+        this.mBtLeService.abortTimedDisconnect();
+    }
 
-	@Override
-	protected void onPause() {
-		// Log.d(TAG, "onPause");
-		super.onPause();
-	}
-	private static IntentFilter makeGattUpdateIntentFilter() {
-		final IntentFilter fi = new IntentFilter();
-		fi.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
-		fi.addAction(BluetoothLeService.ACTION_DATA_NOTIFY);
-		fi.addAction(BluetoothLeService.ACTION_DATA_WRITE);
-		fi.addAction(BluetoothLeService.ACTION_DATA_READ);
-		fi.addAction(DeviceInformationServiceProfile.ACTION_FW_REV_UPDATED);
+    @Override
+    protected void onPause() {
+        // Log.d(TAG, "onPause");
+        super.onPause();
+    }
+    private static IntentFilter makeGattUpdateIntentFilter() {
+        final IntentFilter fi = new IntentFilter();
+        fi.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
+        fi.addAction(BluetoothLeService.ACTION_DATA_NOTIFY);
+        fi.addAction(BluetoothLeService.ACTION_DATA_WRITE);
+        fi.addAction(BluetoothLeService.ACTION_DATA_READ);
+        fi.addAction(DeviceInformationServiceProfile.ACTION_FW_REV_UPDATED);
         fi.addAction(TIOADProfile.ACTION_PREPARE_FOR_OAD);
-		return fi;
-	}
+        return fi;
+    }
 
-	void onViewInflated(View view) {
-		// Log.d(TAG, "Gatt view ready");
-		setBusy(true);
+    void onViewInflated(View view) {
+        // Log.d(TAG, "Gatt view ready");
+        setBusy(true);
 
-		// Set title bar to device name
-		setTitle(mBluetoothDevice.getName());
+        // Set title bar to device name
+        setTitle(mBluetoothDevice.getName());
 
-		// Create GATT object
-		mBtGatt = BluetoothLeService.getBtGatt();
+        // Create GATT object
+        mBtGatt = BluetoothLeService.getBtGatt();
 
         PreferenceWR p = new PreferenceWR(mBluetoothDevice.getAddress(),this);
         if (p.getBooleanPreference(PreferenceWR.PREFERENCEWR_NEEDS_REFRESH) == true) {
@@ -399,86 +399,86 @@ import com.example.ti.util.PreferenceWR;
                 }
             }
         }
-	}
+    }
 
-	boolean isSensorTag2() {
-		return mIsSensorTag2;
-	}
+    boolean isSensorTag2() {
+        return mIsSensorTag2;
+    }
 
-	String firmwareRevision() {
-		return mFwRev;
-	}
-	BluetoothGattService getOadService() {
-		return mOadService;
-	}
+    String firmwareRevision() {
+        return mFwRev;
+    }
+    BluetoothGattService getOadService() {
+        return mOadService;
+    }
 
-	BluetoothGattService getConnControlService() {
-		return mConnControlService;
-	}
+    BluetoothGattService getConnControlService() {
+        return mConnControlService;
+    }
     BluetoothGattService getTestService() {
         return mTestService;
     }
 
-	private void startPreferenceActivity() {
-		// Launch preferences
-		final Intent i = new Intent(this, PreferencesActivity.class);
-		i.putExtra(PreferencesActivity.EXTRA_SHOW_FRAGMENT,
-				PreferencesFragment.class.getName());
-		i.putExtra(PreferencesActivity.EXTRA_NO_HEADERS, true);
-		i.putExtra(EXTRA_DEVICE, mBluetoothDevice);
-		startActivityForResult(i, PREF_ACT_REQ);
-	}
+    private void startPreferenceActivity() {
+        // Launch preferences
+        final Intent i = new Intent(this, PreferencesActivity.class);
+        i.putExtra(PreferencesActivity.EXTRA_SHOW_FRAGMENT,
+                PreferencesFragment.class.getName());
+        i.putExtra(PreferencesActivity.EXTRA_NO_HEADERS, true);
+        i.putExtra(EXTRA_DEVICE, mBluetoothDevice);
+        startActivityForResult(i, PREF_ACT_REQ);
+    }
 
-	private void discoverServices() {
-		if (mBtGatt.discoverServices()) {
-			mServiceList.clear();
-			setBusy(true);
+    private void discoverServices() {
+        if (mBtGatt.discoverServices()) {
+            mServiceList.clear();
+            setBusy(true);
 
-		} else {
+        } else {
 
-		}
-	}
+        }
+    }
 
-	private void setBusy(boolean b) {
-		mDeviceView.setBusy(b);
-	}
-	// Activity result handling
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		super.onActivityResult(requestCode, resultCode, data);
+    private void setBusy(boolean b) {
+        mDeviceView.setBusy(b);
+    }
+    // Activity result handling
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
 
-		switch (requestCode) {
-		default:
-			break;
-		}
-	}
+        switch (requestCode) {
+            default:
+                break;
+        }
+    }
 
-	private void setError(String txt) {
-		setBusy(false);
-		Toast.makeText(this, txt, Toast.LENGTH_LONG).show();
-	}
+    private void setError(String txt) {
+        setBusy(false);
+        Toast.makeText(this, txt, Toast.LENGTH_LONG).show();
+    }
 
-	private void setStatus(String txt) {
-		Toast.makeText(this, txt, Toast.LENGTH_SHORT).show();
-	}
+    private void setStatus(String txt) {
+        Toast.makeText(this, txt, Toast.LENGTH_SHORT).show();
+    }
 
 
-	private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
         List <BluetoothGattService> serviceList;
         List <BluetoothGattCharacteristic> charList = new ArrayList<BluetoothGattCharacteristic>();
 
-		@Override
-		public void onReceive(final Context context, Intent intent) {
-			final String action = intent.getAction();
-			final int status = intent.getIntExtra(BluetoothLeService.EXTRA_STATUS,
-					BluetoothGatt.GATT_SUCCESS);
+        @Override
+        public void onReceive(final Context context, Intent intent) {
+            final String action = intent.getAction();
+            final int status = intent.getIntExtra(BluetoothLeService.EXTRA_STATUS,
+                    BluetoothGatt.GATT_SUCCESS);
 
 
-			if (DeviceInformationServiceProfile.ACTION_FW_REV_UPDATED.equals(action)) {
-				mFwRev = intent.getStringExtra(DeviceInformationServiceProfile.EXTRA_FW_REV_STRING);
-				Log.d("DeviceActivity", "Got FW revision : " + mFwRev + " from DeviceInformationServiceProfile");
-				for (GenericBluetoothProfile p :mProfiles) {
-					p.didUpdateFirmwareRevision(mFwRev);
-				}
+            if (DeviceInformationServiceProfile.ACTION_FW_REV_UPDATED.equals(action)) {
+                mFwRev = intent.getStringExtra(DeviceInformationServiceProfile.EXTRA_FW_REV_STRING);
+                Log.d("DeviceActivity", "Got FW revision : " + mFwRev + " from DeviceInformationServiceProfile");
+                for (GenericBluetoothProfile p :mProfiles) {
+                    p.didUpdateFirmwareRevision(mFwRev);
+                }
             }
             if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
@@ -560,7 +560,7 @@ import com.example.ti.util.PreferenceWR;
                                 runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                Toast.makeText(context, "Android version 4.3 detected, max 4 notifications enabled", Toast.LENGTH_LONG).show();
+                                        Toast.makeText(context, "Android version 4.3 detected, max 4 notifications enabled", Toast.LENGTH_LONG).show();
                                     }
                                 });
                             }
@@ -746,10 +746,10 @@ import com.example.ti.util.PreferenceWR;
                             Toast.LENGTH_LONG).show();
                     return;
                 }
-			} else if (BluetoothLeService.ACTION_DATA_NOTIFY.equals(action)) {
-				// Notification
-				byte[] value = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
-				String uuidStr = intent.getStringExtra(BluetoothLeService.EXTRA_UUID);
+            } else if (BluetoothLeService.ACTION_DATA_NOTIFY.equals(action)) {
+                // Notification
+                byte[] value = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
+                String uuidStr = intent.getStringExtra(BluetoothLeService.EXTRA_UUID);
                 //Log.d("DeviceActivity","Got Characteristic : " + uuidStr);
                 for (int ii = 0; ii < charList.size(); ii++) {
                     BluetoothGattCharacteristic tempC = charList.get(ii);
@@ -773,9 +773,9 @@ import com.example.ti.util.PreferenceWR;
                     }
                 }
 
-				//onCharacteristicChanged(uuidStr, value);
-			} else if (BluetoothLeService.ACTION_DATA_WRITE.equals(action)) {
-				// Data written
+                //onCharacteristicChanged(uuidStr, value);
+            } else if (BluetoothLeService.ACTION_DATA_WRITE.equals(action)) {
+                // Data written
                 byte[] value = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
                 String uuidStr = intent.getStringExtra(BluetoothLeService.EXTRA_UUID);
                 for (int ii = 0; ii < charList.size(); ii++) {
@@ -789,8 +789,8 @@ import com.example.ti.util.PreferenceWR;
                         break;
                     }
                 }
-			} else if (BluetoothLeService.ACTION_DATA_READ.equals(action)) {
-				// Data read
+            } else if (BluetoothLeService.ACTION_DATA_READ.equals(action)) {
+                // Data read
                 byte[] value = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
                 String uuidStr = intent.getStringExtra(BluetoothLeService.EXTRA_UUID);
                 for (int ii = 0; ii < charList.size(); ii++) {
@@ -804,23 +804,23 @@ import com.example.ti.util.PreferenceWR;
                         break;
                     }
                 }
-			}
+            }
             else {
                 if (TIOADProfile.ACTION_PREPARE_FOR_OAD.equals(action)) {
                     new firmwareUpdateStart(progressDialog,context).execute();
                 }
             }
-			if (status != BluetoothGatt.GATT_SUCCESS) {
-				try {
-					Log.d("DeviceActivity", "Failed UUID was " + intent.getStringExtra(BluetoothLeService.EXTRA_UUID));
-					setError("GATT error code: " + BluetoothGATTDefines.gattErrorCodeStrings.get(status));
-				}
-				catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		}
-	};
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                try {
+                    Log.d("DeviceActivity", "Failed UUID was " + intent.getStringExtra(BluetoothLeService.EXTRA_UUID));
+                    setError("GATT error code: " + BluetoothGATTDefines.gattErrorCodeStrings.get(status));
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    };
     class firmwareUpdateStart extends AsyncTask<String, Integer, Void> {
         ProgressDialog pd;
         Context con;
