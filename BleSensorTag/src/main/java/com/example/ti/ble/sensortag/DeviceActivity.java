@@ -108,7 +108,7 @@ import com.example.ti.util.PreferenceWR;
     // Log
     // private static String TAG = "DeviceActivity";
 
-    ArrayList array;
+    ArrayList<String> array = new ArrayList<>();;
     private static final int PERMISSION_REQUEST_FILE = 1;
 
     private Handler handler;
@@ -198,17 +198,6 @@ import com.example.ti.util.PreferenceWR;
         XmlResourceParser xpp = res.getXml(R.xml.gatt_uuid);
         new GattInfo(xpp);
 
-        //auto save
-        array = SensorTagMovementProfile.SensorData();
-
-        final StringBuffer sb = new StringBuffer();
-        sb.append("Sensor Data\n");
-        for (int i = 0; i < array.size(); i++) {
-            sb.append(array.get(i));
-            sb.append("\n");
-        }
-        final String result = sb.toString();
-
         handler = new Handler();
         timer = new Timer();
         timer.schedule(new TimerTask() {
@@ -217,18 +206,32 @@ import com.example.ti.util.PreferenceWR;
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
+                        //auto save
+                        array = SensorTagMovementProfile.SensorData();
+
+                        final StringBuffer sb = new StringBuffer();
+                        sb.append("Sensor Data\n");
+                        for (int i = 0; i < array.size(); i++) {
+                            sb.append(array.get(i));
+                            sb.append("\n");
+                        }
+                        final String result = sb.toString();
+
                         writeFile(result);
                         Toast.makeText(getApplicationContext(), "자동 저장되었습니다.", Toast.LENGTH_SHORT).show();
-                        ((SensorTagMovementProfile) SensorTagMovementProfile.context_sensortag_mov).TList.clear();
-                        ((DeviceActivity) DeviceActivity.context_device).list.clear();
-                        ((TaggingView) TaggingView.context_help).LabelTimeList.clear();
-                        ((TaggingView) TaggingView.context_help).LabelList.clear();
-                        array.clear();
                     }
                 });
             }
         }, 2 * 60 * 1000); // 2 minutes in milliseconds
 
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Cancel the timer when the activity is destroyed
+        if (timer != null) {
+            timer.cancel();
+        }
     }
 
     public void writeFile(String str) {
@@ -252,6 +255,11 @@ import com.example.ti.util.PreferenceWR;
                 FileWriter fw = new FileWriter(file, false);
                 fw.write(str);
                 fw.close();
+                ((SensorTagMovementProfile) SensorTagMovementProfile.context_sensortag_mov).TList.clear();
+                ((DeviceActivity) DeviceActivity.context_device).list.clear();
+                ((TaggingView) TaggingView.context_help).LabelTimeList.clear();
+                ((TaggingView) TaggingView.context_help).LabelList.clear();
+                array.clear();
             } catch (IOException e) {
                 e.printStackTrace();
                 Toast.makeText(getApplicationContext(), "ERROR", Toast.LENGTH_SHORT).show();
