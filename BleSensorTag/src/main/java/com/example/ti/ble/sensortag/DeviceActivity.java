@@ -225,14 +225,6 @@ import com.example.ti.util.PreferenceWR;
         }, 2 * 60 * 1000); // 2 minutes in milliseconds
 
     }
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        // Cancel the timer when the activity is destroyed
-        if (timer != null) {
-            timer.cancel();
-        }
-    }
 
     public void writeFile(String str) {
         // Check if external storage is mounted
