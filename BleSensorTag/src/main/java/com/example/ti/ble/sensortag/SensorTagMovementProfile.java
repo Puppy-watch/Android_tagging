@@ -197,13 +197,13 @@ public class SensorTagMovementProfile extends GenericBluetoothProfile {
 			else {
 				for(int i = 0; i < LabelTimeList.size(); i++) {
 					if(i == LabelTimeList.size() - 1) {
-						TList.add(nowTime + LabelList.get(i));
-//						TList.add(LabelList.get(i));
+//							TList.add(nowTime + LabelList.get(i));
+						TList.add(LabelList.get(i));
 					}
 					else {
 						while(Integer.parseInt(LabelTimeList.get(i)) <= (Integer.parseInt(nowTimeList)) & ((Integer.parseInt(nowTimeList) < Integer.parseInt(LabelTimeList.get(i+1))))) {
-							TList.add(nowTime + LabelList.get(i));
-//							TList.add(LabelList.get(i));
+//								TList.add(nowTime + LabelList.get(i));
+							TList.add(LabelList.get(i));
 						}
 					}
 				}
@@ -257,5 +257,3 @@ public class SensorTagMovementProfile extends GenericBluetoothProfile {
 		return arr;
 	}
 }
-
-
