@@ -113,6 +113,7 @@ import com.example.ti.util.PreferenceWR;
 
     private Handler handler;
     private Timer timer;
+    private boolean isTimerRunning;
 
     // Activity
     public static final String EXTRA_DEVICE = "EXTRA_DEVICE";
@@ -200,30 +201,67 @@ import com.example.ti.util.PreferenceWR;
 
         handler = new Handler();
         timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        //auto save
-                        array = SensorTagMovementProfile.SensorData();
+        startAutoSaveTimer();
+//        timer.schedule(new TimerTask() {
+//            @Override
+//            public void run() {
+//                handler.post(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        //auto save
+//                        array = SensorTagMovementProfile.SensorData();
+//
+//                        final StringBuffer sb = new StringBuffer();
+//                        sb.append("Sensor Data\n");
+//                        for (int i = 0; i < array.size(); i++) {
+//                            sb.append(array.get(i));
+//                            sb.append("\n");
+//                        }
+//                        final String result = sb.toString();
+//
+//                        writeFile(result);
+//                        Toast.makeText(getApplicationContext(), "자동 저장되었습니다.", Toast.LENGTH_SHORT).show();
+//                    }
+//                });
+//            }
+//        }, 2 * 60 * 1000); // 2 minutes in milliseconds
 
-                        final StringBuffer sb = new StringBuffer();
-                        sb.append("Sensor Data\n");
-                        for (int i = 0; i < array.size(); i++) {
-                            sb.append(array.get(i));
-                            sb.append("\n");
-                        }
-                        final String result = sb.toString();
+    }
 
-                        writeFile(result);
-                        Toast.makeText(getApplicationContext(), "자동 저장되었습니다.", Toast.LENGTH_SHORT).show();
+    private void startAutoSaveTimer() {
+        if (!isTimerRunning) {
+            timer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    // Auto save
+                    array = SensorTagMovementProfile.SensorData();
+
+                    final StringBuffer sb = new StringBuffer();
+                    sb.append("Sensor Data\n");
+                    for (int i = 0; i < array.size(); i++) {
+                        sb.append(array.get(i));
+                        sb.append("\n");
                     }
-                });
-            }
-        }, 2 * 60 * 1000); // 2 minutes in milliseconds
+                    final String result = sb.toString();
 
+                    writeFile(result);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getApplicationContext(), "자동 저장되었습니다.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            }, 2 * 60 * 1000, 2 * 60 * 1000); // Delay 2 minutes, Repeat every 2 minutes
+
+            isTimerRunning = true;
+        }
+    }
+
+    private void stopAutoSaveTimer() {
+        timer.cancel();
+        timer.purge();
+        isTimerRunning = false;
     }
 
     public void writeFile(String str) {
@@ -287,9 +325,7 @@ import com.example.ti.util.PreferenceWR;
         finishActivity(FWUPDATE_ACT_REQ);
 
         // Cancel the timer when the activity is destroyed
-        if (timer != null) {
-            timer.cancel();
-        }
+        stopAutoSaveTimer();
     }
 
     @Override
